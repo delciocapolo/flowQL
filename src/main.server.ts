@@ -354,12 +354,14 @@ class Server {
         }
     }
     /**
-     * @param port (port: number) set the PORT to server listen
+     * @param port (PORT: number) set the PORT to server listen
      */
-    public listen(port:number) {
+    public listen(PORT:number, HOST?: string) {
         this.server
-            .listen(port, "localhost", 
-            () => this.log(`SERVIDOR ESTÁ RODANDO NA PORTA: http://localhost:${port}`));
+            .listen(PORT, HOST || "localhost");
+        this.server.on("listening", () => {
+            this.log(`SERVIDOR ESTA RODANDO NA PORTA http://127.0.0.1:${PORT}`);
+        });
     }
 
 }

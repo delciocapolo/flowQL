@@ -82,3 +82,4 @@ main_server_1.default.put([
         },
     }
 ], configDB);
+main_server_1.default.listen(4002);

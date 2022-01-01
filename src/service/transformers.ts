@@ -1,5 +1,4 @@
 import { IGet } from "@src/global/interfaces";
-import URL from "node:url";
 
 const validateLengthArrays = function (arr1: Array<any>, arr2: Array<any>):boolean {
     return arr1.every((value, index) => value === arr2[index]);

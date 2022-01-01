@@ -4,7 +4,7 @@
   "description": "A forma mais simples de criar um CRUD, tendo todo o poder de controle das [rotas, argumentos] para si",
   "main": "dist/_main.server.js",
   "scripts": {
-    "dev": "nodemon src/index.ts"
+    "dev": "DEBUG=api:* nodemon src/index.ts"
   },
   "keywords": [
     "express",

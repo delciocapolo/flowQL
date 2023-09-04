@@ -14,6 +14,14 @@ import server from "./main.server";
 
 server.post(
     [
-        {"url": "/home", "params": () => { console.log() }}
-    ]
+        {
+            "url": "/home",
+            params({ obj_body }) {
+                const {email, firstName, lastName} = Object(obj_body);
+            },
+        }
+    ],
+    {"database":"flowQLDB", "host": "localhost","password":"#3dvan1a^2+/-D", "user":"root"}
 );
+
+// [nome, idade] => {  }

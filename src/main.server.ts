@@ -12,30 +12,27 @@ config({"debug": true});
 
 
 interface IInject extends IGet{
-    params: () => void | Array<string>;
+    params({ obj_body, validate, insertInTbl }:IDefineDBParms): void;
 }
 
+interface IDefineDBParms {
+    obj_body?: object;
+    validate?: boolean;
+    insertInTbl?(tbl_name: string, fieldTable: Array<string>, valuesField: Array<string>): void;
+}
+
+interface IDefineDBGeneric {
+    arr: Array<any>;
+}
 
 // /produto | GET(rota, dados_de_retorno)
 // /produto | POST(rota, )
 /**
- * server.post(
- * "dbNameMysql": "user_adm",
- * [
- * {
- *  url:"user",
- *  params: {
- *      "route": "user/adm",
- *      "tblNameMysql": "adm",
- *      "body": ["nome","salario","cargo"],
- *      "values": ["valor1", "valor2", "valor3"]
- *  }
- * }
- * ])
  * app.post(rota, (req, res) => { 
  * 
  * })
  */
+
 class Server {
     public readonly server: http.Server;
     private readonly PORT: number | never;
@@ -129,29 +126,51 @@ class Server {
         return connection;
     }
 
-    private checkUnique(arr1: Array<any>, arr2: Array<any>):boolean {
+    private validateLengthArrays(arr1: Array<any>, arr2: Array<any>):boolean {
         return arr1.every((value, index) => value === arr2[index]);
     }
 
+    private validateField(list: object | Array<any>) {
+        if(typeof list === "object") {
+            return Object.values(list).every((value) => (!!String(value).trim()))
+        } else if(Array.isArray(list)){
+            return Array(list).every((value) => (!!String(value).trim()));
+        }
+    }
+
     public async post(urls: Array<IInject>, dbConfig?: IDBConfig) {
-        if(!dbConfig) {
+
+        if(dbConfig) {
+            const connect = this.connectionDB(dbConfig!);
+
             urls.map((urlParam) => {
-                const {url, data,params} = urlParam;
+                const {url, data, params} = urlParam;
                 const param = this.transformURL({"url": url});
 
                 this.server.on("request", (req, res) => {
                     if(req.url === `/${param}` && req.method === "POST") {
-                        const data:Array<Buffer> = [];
+                        const datas:Array<Buffer> = [];
                         
                         req.on("data", (chunk) => {
-                            data.push(chunk);
+                            datas.push(chunk);
                         });
 
                         req.on("end", () => {
-                            const body = Buffer.concat(data).toString();
+                            const body = Buffer.concat(datas).toString();
                             const parsedBody = qs.parse(body);
-                            console.log(parsedBody['email']);
-                            res.end(JSON.stringify({"msg": parsedBody}));
+                            
+                            const setArray = (arr: string[]) => arr.map((value, index, array) => (array[index].replace(value, '?')));
+
+                            params({"obj_body": parsedBody, "validate": this.validateField(parsedBody)!, insertInTbl(tbl_name, fieldTable, valuesField) {
+                                    if(fieldTable.length !== valuesField.length) {
+                                        throw new Error("O numero de campos que serao inseridos, nao pode ser diferente do numero de valores que serao inseridos");
+                                    }
+                                    const [field, values] = [fieldTable.toString(), setArray(valuesField).toString()]
+                                    connect.execute(`INSERT INTO ${tbl_name}(${field}) VALUES (${values})`, valuesField, (err) => (err ? console.log("Erro ao inserir os dados! "+err) : console.log("Valores inseridos com sucesso")));
+                                }
+                            });
+
+                            res.end(JSON.stringify({"message": "sucess", 'status': 200}));
                         });
                     }
                 })

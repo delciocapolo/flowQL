@@ -22,19 +22,6 @@ const debug_1 = __importDefault(require("debug"));
 // /produto | GET(rota, dados_de_retorno)
 // /produto | POST(rota, )
 /**
- * server.post(
- * "dbNameMysql": "user_adm",
- * [
- * {
- *  url:"user",
- *  params: {
- *      "route": "user/adm",
- *      "tblNameMysql": "adm",
- *      "body": ["nome","salario","cargo"],
- *      "values": ["valor1", "valor2", "valor3"]
- *  }
- * }
- * ])
  * app.post(rota, (req, res) => {
  *
  * })
@@ -119,26 +106,42 @@ class Server {
         });
         return connection;
     }
-    checkUnique(arr1, arr2) {
+    validateLengthArrays(arr1, arr2) {
         return arr1.every((value, index) => value === arr2[index]);
+    }
+    validateField(list) {
+        if (typeof list === "object") {
+            return Object.values(list).every((value) => (!!String(value).trim()));
+        }
+        else if (Array.isArray(list)) {
+            return Array(list).every((value) => (!!String(value).trim()));
+        }
     }
     post(urls, dbConfig) {
         return __awaiter(this, void 0, void 0, function* () {
-            if (!dbConfig) {
+            if (dbConfig) {
+                const connect = this.connectionDB(dbConfig);
                 urls.map((urlParam) => {
                     const { url, data, params } = urlParam;
                     const param = this.transformURL({ "url": url });
                     this.server.on("request", (req, res) => {
                         if (req.url === `/${param}` && req.method === "POST") {
-                            const data = [];
+                            const datas = [];
                             req.on("data", (chunk) => {
-                                data.push(chunk);
+                                datas.push(chunk);
                             });
                             req.on("end", () => {
-                                const body = Buffer.concat(data).toString();
+                                const body = Buffer.concat(datas).toString();
                                 const parsedBody = node_querystring_1.default.parse(body);
-                                console.log(parsedBody['email']);
-                                res.end(JSON.stringify({ "msg": parsedBody }));
+                                const setArray = (arr) => arr.map((value, index, array) => (array[index].replace(value, '?')));
+                                params({ "obj_body": parsedBody, "validate": this.validateField(parsedBody), insertInTbl(tbl_name, fieldTable, valuesField) {
+                                        if (fieldTable.length !== valuesField.length) {
+                                            throw new Error("O numero de campos que serao inseridos, nao pode ser diferente do numero de valores que serao inseridos");
+                                        }
+                                        const [field, values] = [fieldTable.toString(), setArray(valuesField).toString()];
+                                        connect.execute(`INSERT INTO ${tbl_name}(${field}) VALUES (${values})`, valuesField, (err) => (err ? console.log("Erro ao inserir os dados! " + err) : console.log("Valores inseridos com sucesso")));
+                                    } });
+                                res.end(JSON.stringify({ "message": "sucess", 'status': 200 }));
                             });
                         }
                     });

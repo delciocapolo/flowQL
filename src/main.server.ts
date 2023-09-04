@@ -139,42 +139,46 @@ class Server {
     }
 
     public async post(urls: Array<IInject>, dbConfig?: IDBConfig) {
+        switch (!!dbConfig) {
+            case true:
+                const connect = this.connectionDB(dbConfig!);
 
-        if(dbConfig) {
-            const connect = this.connectionDB(dbConfig!);
+                urls.map((urlParam) => {
+                    const {url, data, params} = urlParam;
+                    const param = this.transformURL({"url": url});
 
-            urls.map((urlParam) => {
-                const {url, data, params} = urlParam;
-                const param = this.transformURL({"url": url});
-
-                this.server.on("request", (req, res) => {
-                    if(req.url === `/${param}` && req.method === "POST") {
-                        const datas:Array<Buffer> = [];
-                        
-                        req.on("data", (chunk) => {
-                            datas.push(chunk);
-                        });
-
-                        req.on("end", () => {
-                            const body = Buffer.concat(datas).toString();
-                            const parsedBody = qs.parse(body);
+                    this.server.on("request", (req, res) => {
+                        if(req.url === `/${param}` && req.method === "POST") {
+                            const datas:Array<Buffer> = [];
                             
-                            const setArray = (arr: string[]) => arr.map((value, index, array) => (array[index].replace(value, '?')));
-
-                            params({"obj_body": parsedBody, "validate": this.validateField(parsedBody)!, insertInTbl(tbl_name, fieldTable, valuesField) {
-                                    if(fieldTable.length !== valuesField.length) {
-                                        throw new Error("O numero de campos que serao inseridos, nao pode ser diferente do numero de valores que serao inseridos");
-                                    }
-                                    const [field, values] = [fieldTable.toString(), setArray(valuesField).toString()]
-                                    connect.execute(`INSERT INTO ${tbl_name}(${field}) VALUES (${values})`, valuesField, (err) => (err ? console.log("Erro ao inserir os dados! "+err) : console.log("Valores inseridos com sucesso")));
-                                }
+                            req.on("data", (chunk) => {
+                                datas.push(chunk);
                             });
 
-                            res.end(JSON.stringify({"message": "sucess", 'status': 200}));
-                        });
-                    }
-                })
-            })
+                            req.on("end", () => {
+                                const body = Buffer.concat(datas).toString();
+                                const parsedBody = qs.parse(body);
+                                
+                                const setArray = (arr: string[]) => arr.map((value, index, array) => (array[index].replace(value, '?')));
+
+                                params({"obj_body": parsedBody, "validate": this.validateField(parsedBody)!, insertInTbl(tbl_name, fieldTable, valuesField) {
+                                        if(fieldTable.length !== valuesField.length) {
+                                            throw new Error("O numero de campos que serao inseridos, nao pode ser diferente do numero de valores que serao inseridos");
+                                        }
+                                        const [field, values] = [fieldTable.toString(), setArray(valuesField).toString()]
+                                        connect.execute(`INSERT INTO ${tbl_name}(${field}) VALUES (${values})`, valuesField, (err) => (err ? console.log("Erro ao inserir os dados! "+err) : console.log("Valores inseridos com sucesso")));
+                                    }
+                                });
+
+                                res.end(JSON.stringify({"message": "sucess", 'status': 200}));
+                            });
+                        }
+                    })
+                });
+                break;
+        
+            default:
+                break;
         }
     }
 

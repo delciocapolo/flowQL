@@ -16,8 +16,8 @@ server.post(
     [
         {
             "url": "/home",
-            params({ obj_body }) {
-                const {email, firstName, lastName} = Object(obj_body);
+            params({ obj_body, validate, insertInTbl }) {
+                
             },
         }
     ],

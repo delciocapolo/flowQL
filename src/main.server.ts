@@ -2,12 +2,12 @@ import http from "node:http";
 import qs from "node:querystring";
 
 import axios, { AxiosError } from "axios";
-import {createConnection, Connection, createPool} from "mysql2";
+import {createConnection, Connection} from "mysql2";
 import { config } from "dotenv";
 import debug from "debug";
 
 import {IGet,IDBConfig} from "./global/interfaces"
-import { validateLengthArrays,checkObjects,validateField,transformURL } from "./service/transformers"; 
+import { checkObjects,validateField,transformURL } from "./service/transformers"; 
 
 config({"debug": true});
 
@@ -22,13 +22,10 @@ interface IDefineDBParams {
     insertInTbl(tbl_name: string, fieldTable: Array<string>, valuesField: Array<string>): void;
 }
 
-// /produto | GET(rota, dados_de_retorno)
-// /produto | POST(rota, )
-/**
- * app.post(rota, (req, res) => { 
- * 
- * })
- */
+// /produto | GET(rota, dados_de_retorno);
+// /produto | POST(rota, manipular_dados_do_usuario);
+// /produto | PUT(rota, mudar_dados_do_usuario);
+// /produto | DELETE(rota, eliminar_registos);
 
 class Server {
     public readonly server: http.Server;

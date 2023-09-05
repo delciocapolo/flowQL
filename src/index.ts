@@ -12,16 +12,14 @@ import server from "./main.server";
 //     }
 // ]);
 
-server.post(
-    [
-        {
-            "url": "/home",
-            params({ obj_body, validate, insertInTbl }) {
-                
-            },
-        }
-    ],
-    {"database":"flowQLDB", "host": "localhost","password":"#3dvan1a^2+/-D", "user":"root"}
-);
-
-// [nome, idade] => {  }
+// server.post(
+//     [
+//         {
+//             "url": "/home",
+//             params({ obj_body, validate, insertInTbl }) {
+//                 const {username, email} = Object(obj_body);
+//                 // insertInTbl("tbl_user", ["username","email"],[username,email]);
+//             },
+//         }
+//     ]
+// );

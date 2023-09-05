@@ -7,22 +7,19 @@ import { config } from "dotenv";
 import debug from "debug";
 
 import {IGet,IDBConfig} from "./global/interfaces"
+import { validateLengthArrays,checkObjects,validateField,transformURL } from "./service/transformers"; 
 
 config({"debug": true});
 
 
 interface IInject extends IGet{
-    params({ obj_body, validate, insertInTbl }:IDefineDBParms): void;
+    params({ obj_body, validate, insertInTbl }:IDefineDBParams): void;
 }
 
-interface IDefineDBParms {
+interface IDefineDBParams {
     obj_body?: object;
     validate?: boolean;
-    insertInTbl?(tbl_name: string, fieldTable: Array<string>, valuesField: Array<string>): void;
-}
-
-interface IDefineDBGeneric {
-    arr: Array<any>;
+    insertInTbl(tbl_name: string, fieldTable: Array<string>, valuesField: Array<string>): void;
 }
 
 // /produto | GET(rota, dados_de_retorno)
@@ -40,7 +37,7 @@ class Server {
 
     constructor() {
         this.server = new http.Server(this.configServer);
-        this.PORT = Number(process.env.PORT);
+        this.PORT = Number(process.env.PORT) || 3333;
         this.log = debug("api:main");
 
         // Inicializar metodo
@@ -51,27 +48,6 @@ class Server {
         res.writeHead(200, {"Content-Type": "application/json"});
         // res.writeHead(200, {"Content-Security-Policy:": "*"});
         res.writeHead(200, {"Cross-Allow-Origin": "*"});
-    }
-
-    /**
-     * 
-     * @param arr `function | method`
-     * @param typeData `typedata variable`
-     * @returns boolean
-     */
-    private checkObjects(arr: Array<any>, typeData: string):boolean {
-        return arr.every((pred) => typeof pred === typeData);
-            // (arr[0] as string) : arr.every((pred) => typeof pred === "object") ? (arr[0] as object) : (arr[0] as never)
-    }
-    
-    private transformURL({url}:IGet):string {
-        let indent:string = "";
-        for(let i of url) {
-            if(i !== "/") {
-                indent += i;
-            }
-        }
-        return indent;
     }
 
     private async Request({url}:IGet):Promise<{message: string}> {
@@ -85,13 +61,13 @@ class Server {
     }
 
     public get(urls: Array<IGet> | Array<string>) {
-        if(!this.checkObjects(urls, "string") && !this.checkObjects(urls, "object")) {
+        if(!checkObjects(urls, "string") && !checkObjects(urls, "object")) {
             throw new Error("Error => O tipo da condicao, nao coencide");
         }
-        if(this.checkObjects(urls, "string")) {
+        if(checkObjects(urls, "string")) {
             urls.map((url) => {
                 const tempURL = String(url);
-                const param = this.transformURL({"url": tempURL});
+                const param = transformURL({"url": tempURL});
                 
                 this.server.on("request", (req, res) => {
                     if(req.url === `/${param}` && req.method === "GET") {
@@ -101,10 +77,10 @@ class Server {
 
             });
         } 
-        else if(this.checkObjects(urls, "object")) {
+        else if(checkObjects(urls, "object")) {
             urls!.map((urlParam) => {
                 const {url, data} = Object(urlParam);
-                const param = this.transformURL({"url": url});
+                const param = transformURL({"url": url});
                 
                 this.server.on("request", (req, res) => {
                     if(req.url === `/${param}` && req.method === "GET") {
@@ -126,26 +102,14 @@ class Server {
         return connection;
     }
 
-    private validateLengthArrays(arr1: Array<any>, arr2: Array<any>):boolean {
-        return arr1.every((value, index) => value === arr2[index]);
-    }
-
-    private validateField(list: object | Array<any>) {
-        if(typeof list === "object") {
-            return Object.values(list).every((value) => (!!String(value).trim()))
-        } else if(Array.isArray(list)){
-            return Array(list).every((value) => (!!String(value).trim()));
-        }
-    }
-
-    public async post(urls: Array<IInject>, dbConfig?: IDBConfig) {
+    public post(urls: Array<IInject>, dbConfig?: IDBConfig) {
         switch (!!dbConfig) {
             case true:
                 const connect = this.connectionDB(dbConfig!);
 
                 urls.map((urlParam) => {
-                    const {url, data, params} = urlParam;
-                    const param = this.transformURL({"url": url});
+                    const {url, params} = urlParam;
+                    const param = transformURL({"url": url});
 
                     this.server.on("request", (req, res) => {
                         if(req.url === `/${param}` && req.method === "POST") {
@@ -161,12 +125,12 @@ class Server {
                                 
                                 const setArray = (arr: string[]) => arr.map((value, index, array) => (array[index].replace(value, '?')));
 
-                                params({"obj_body": parsedBody, "validate": this.validateField(parsedBody)!, insertInTbl(tbl_name, fieldTable, valuesField) {
+                                params({"obj_body": parsedBody, "validate": validateField(parsedBody)!, insertInTbl(tbl_name, fieldTable, valuesField) {
                                         if(fieldTable.length !== valuesField.length) {
-                                            throw new Error("O numero de campos que serao inseridos, nao pode ser diferente do numero de valores que serao inseridos");
+                                            throw new Error("O número de campos que serão inseridos, não pode ser diferente do número de valores que serão inseridos!");
                                         }
                                         const [field, values] = [fieldTable.toString(), setArray(valuesField).toString()]
-                                        connect.execute(`INSERT INTO ${tbl_name}(${field}) VALUES (${values})`, valuesField, (err) => (err ? console.log("Erro ao inserir os dados! "+err) : console.log("Valores inseridos com sucesso")));
+                                        connect.execute(`INSERT INTO ${tbl_name}(${field}) VALUES (${values})`, valuesField, (err) => (err ? console.log("Erro ao inserir os dados! "+err) : console.log("Valores inseridos com sucesso!")));
                                     }
                                 });
 
@@ -176,7 +140,34 @@ class Server {
                     })
                 });
                 break;
-        
+            case false:
+                urls.map((urlParam) => {
+                    const {url, params} = urlParam;
+                    const param = transformURL({"url": url});
+
+                    this.server.on("request", (req, res) => {
+                        if(req.url === `/${param}` && req.method === "POST") {
+                            const datas:Array<Buffer> = [];
+                            
+                            req.on("data", (chunk) => {
+                                datas.push(chunk);
+                            });
+
+                            req.on("end", () => {
+                                const body = Buffer.concat(datas).toString();
+                                const parsedBody = qs.parse(body);
+
+                                params({"obj_body": parsedBody, "validate": validateField(parsedBody)!, insertInTbl(tbl_name, fieldTable, valuesField) {
+                                        throw new Error("Não pode usar a função [insertInTbl], sem definir as configurações para conexão com o banco de dados!");
+                                    }
+                                });
+
+                                res.end(JSON.stringify({"message": "sucess", 'status': 200}));
+                            });
+                        }
+                    })
+                });
+                break;
             default:
                 break;
         }

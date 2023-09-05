@@ -19,9 +19,8 @@ main_server_1.default.post([
     {
         "url": "/home",
         params({ obj_body, validate, insertInTbl }) {
-            const { email, firstName, lastName } = Object(obj_body);
-            insertInTbl("tbl_user", ["username", "email"], ["delcio capolo", "delcio@gmail.com"]);
+            const { username, email } = Object(obj_body);
+            // insertInTbl("tbl_user", ["username","email"],[username,email]);
         },
     }
-], { "database": "flowQLDB", "host": "localhost", "password": "#3dvan1a^2+/-D", "user": "root" });
-// [nome, idade] => {  }
+]);

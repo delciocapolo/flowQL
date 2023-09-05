@@ -119,33 +119,59 @@ class Server {
     }
     post(urls, dbConfig) {
         return __awaiter(this, void 0, void 0, function* () {
-            if (dbConfig) {
-                const connect = this.connectionDB(dbConfig);
-                urls.map((urlParam) => {
-                    const { url, data, params } = urlParam;
-                    const param = this.transformURL({ "url": url });
-                    this.server.on("request", (req, res) => {
-                        if (req.url === `/${param}` && req.method === "POST") {
-                            const datas = [];
-                            req.on("data", (chunk) => {
-                                datas.push(chunk);
-                            });
-                            req.on("end", () => {
-                                const body = Buffer.concat(datas).toString();
-                                const parsedBody = node_querystring_1.default.parse(body);
-                                const setArray = (arr) => arr.map((value, index, array) => (array[index].replace(value, '?')));
-                                params({ "obj_body": parsedBody, "validate": this.validateField(parsedBody), insertInTbl(tbl_name, fieldTable, valuesField) {
-                                        if (fieldTable.length !== valuesField.length) {
-                                            throw new Error("O numero de campos que serao inseridos, nao pode ser diferente do numero de valores que serao inseridos");
-                                        }
-                                        const [field, values] = [fieldTable.toString(), setArray(valuesField).toString()];
-                                        connect.execute(`INSERT INTO ${tbl_name}(${field}) VALUES (${values})`, valuesField, (err) => (err ? console.log("Erro ao inserir os dados! " + err) : console.log("Valores inseridos com sucesso")));
-                                    } });
-                                res.end(JSON.stringify({ "message": "sucess", 'status': 200 }));
-                            });
-                        }
+            switch (!!dbConfig) {
+                case true:
+                    const connect = this.connectionDB(dbConfig);
+                    urls.map((urlParam) => {
+                        const { url, data, params } = urlParam;
+                        const param = this.transformURL({ "url": url });
+                        this.server.on("request", (req, res) => {
+                            if (req.url === `/${param}` && req.method === "POST") {
+                                const datas = [];
+                                req.on("data", (chunk) => {
+                                    datas.push(chunk);
+                                });
+                                req.on("end", () => {
+                                    const body = Buffer.concat(datas).toString();
+                                    const parsedBody = node_querystring_1.default.parse(body);
+                                    const setArray = (arr) => arr.map((value, index, array) => (array[index].replace(value, '?')));
+                                    params({ "obj_body": parsedBody, "validate": this.validateField(parsedBody), insertInTbl(tbl_name, fieldTable, valuesField) {
+                                            if (fieldTable.length !== valuesField.length) {
+                                                throw new Error("O numero de campos que serao inseridos, nao pode ser diferente do numero de valores que serao inseridos");
+                                            }
+                                            const [field, values] = [fieldTable.toString(), setArray(valuesField).toString()];
+                                            connect.execute(`INSERT INTO ${tbl_name}(${field}) VALUES (${values})`, valuesField, (err) => (err ? console.log("Erro ao inserir os dados! " + err) : console.log("Valores inseridos com sucesso")));
+                                        } });
+                                    res.end(JSON.stringify({ "message": "sucess", 'status': 200 }));
+                                });
+                            }
+                        });
                     });
-                });
+                    break;
+                case false:
+                    urls.map((urlParam) => {
+                        const { url, data, params } = urlParam;
+                        const param = this.transformURL({ "url": url });
+                        this.server.on("request", (req, res) => {
+                            if (req.url === `/${param}` && req.method === "POST") {
+                                const datas = [];
+                                req.on("data", (chunk) => {
+                                    datas.push(chunk);
+                                });
+                                req.on("end", () => {
+                                    const body = Buffer.concat(datas).toString();
+                                    const parsedBody = node_querystring_1.default.parse(body);
+                                    params({ "obj_body": parsedBody, "validate": this.validateField(parsedBody), insertInTbl(tbl_name, fieldTable, valuesField) {
+                                            throw new Error("Nao pode usar a funcao [insertInTbl], sem definir as configuracoes para conexao com o banco de dados!");
+                                        } });
+                                    res.end(JSON.stringify({ "message": "sucess", 'status': 200 }));
+                                });
+                            }
+                        });
+                    });
+                    break;
+                default:
+                    break;
             }
         });
     }

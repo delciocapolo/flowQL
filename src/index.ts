@@ -12,14 +12,13 @@ import server from "./main.server";
 //     }
 // ]);
 
-// server.post(
-//     [
-//         {
-//             "url": "/home",
-//             params({ obj_body, validate, insertInTbl }) {
-//                 const {username, email} = Object(obj_body);
-//                 // insertInTbl("tbl_user", ["username","email"],[username,email]);
-//             },
-//         }
-//     ]
-// );
+server.post(
+    [
+        {
+            "url": "/home",
+            params({ obj_body, validate, insertInTbl }) {
+                const {username, email} = Object(obj_body);
+            },
+        }
+    ]
+);

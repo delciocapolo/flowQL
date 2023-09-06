@@ -32,4 +32,7 @@ const validateField = function (list: object | Array<any>) {
         return Array(list).every((value) => (!!String(value).trim()));
     }
 }
-export { validateLengthArrays,checkObjects,validateField,transformURL };
+
+const setArray = (arr: string[]) => arr.map((value, index, array) => (array[index].replace(value, '?')));
+
+export { validateLengthArrays,checkObjects,validateField,transformURL,setArray };

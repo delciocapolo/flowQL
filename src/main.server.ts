@@ -7,7 +7,7 @@ import { config } from "dotenv";
 import debug from "debug";
 
 import {IGet,IDBConfig} from "./global/interfaces"
-import { checkObjects,validateField,transformURL } from "./service/transformers"; 
+import { checkObjects,validateField,transformURL,setArray } from "./service/transformers"; 
 
 config({"debug": true});
 
@@ -119,8 +119,6 @@ class Server {
                             req.on("end", () => {
                                 const body = Buffer.concat(datas).toString();
                                 const parsedBody = qs.parse(body);
-                                
-                                const setArray = (arr: string[]) => arr.map((value, index, array) => (array[index].replace(value, '?')));
 
                                 params({"obj_body": parsedBody, "validate": validateField(parsedBody)!, insertInTbl(tbl_name, fieldTable, valuesField) {
                                         if(fieldTable.length !== valuesField.length) {
@@ -169,7 +167,7 @@ class Server {
                 break;
         }
     }
-
+    
     public listen(PORT?:number) {
         this.server
             .listen(this.PORT || PORT!, "localhost", 

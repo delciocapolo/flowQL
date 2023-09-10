@@ -1,13 +1,4 @@
 "use strict";
-var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
-    function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
-    return new (P || (P = Promise))(function (resolve, reject) {
-        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
-        function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
-        function step(result) { result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected); }
-        step((generator = generator.apply(thisArg, _arguments || [])).next());
-    });
-};
 var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
@@ -15,44 +6,51 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const node_http_1 = __importDefault(require("node:http"));
 const node_querystring_1 = __importDefault(require("node:querystring"));
 const node_url_1 = __importDefault(require("node:url"));
-const axios_1 = __importDefault(require("axios"));
 const mysql2_1 = require("mysql2");
-const dotenv_1 = require("dotenv");
 const debug_1 = __importDefault(require("debug"));
 const transformers_1 = require("./service/transformers");
-(0, dotenv_1.config)({ "debug": true });
-// /produto | GET(rota, dados_de_retorno);
-// /produto | POST(rota, manipular_dados_do_usuario);
-// /produto | PUT(rota, mudar_dados_do_usuario);
-// /produto | DELETE(rota, eliminar_registos);
+const errors_1 = require("./errors");
 class Server {
     constructor() {
         this.server = new node_http_1.default.Server(this.configServer);
-        this.PORT = Number(process.env.PORT) || 3333;
         this.log = (0, debug_1.default)("api:main");
-        // Inicializar metodo
-        this.listen();
+        this.msgDBError = {
+            message: "CONEXAO COM BANCO DE DADOS [NAO] REALIZADA!",
+            action: "VERIFIQUE OS VALORES DEFINIDOS PARA CONEXAO COM BANCO DE DADOS ou SE O SERVIDOR [MYSQL] ESTÁ RODANDO"
+        };
+        this.msgErrorLength = {
+            message: "O NÚMERO DE CAMPOS QUE SERÃO INSERIDOS, NÃO PODE SER DIFERENTE DO NÚMERO DE VALORES QUE SERÃO INSERIDOS",
+            action: "DEFINA O MESMO NÚMERO DE VALORES NO ARRAY DO OBJECTO(COLUNA DA TABELA DO BANCO DE DADOS) E NO ARRAY DO OBJECTO VALUES(VALORES PARA A TABELA QUE SERÃO INSERIDOS OS VALORES)"
+        };
     }
     configServer(req, res) {
         res.writeHead(200, { "Content-Type": "application/json" });
-        // res.writeHead(200, {"Content-Security-Policy:": "*"});
         res.writeHead(200, { "Cross-Allow-Origin": "*" });
     }
-    Request({ url }) {
-        return __awaiter(this, void 0, void 0, function* () {
-            try {
-                const response = yield axios_1.default.get(`http://127.0.0.1:${this.PORT}/${url}`);
-                const responseJSON = yield response.data;
-                return responseJSON;
-            }
-            catch (err) {
-                throw new Error(`Erro => ${err}`);
-            }
+    /**
+     *
+     * @param params ({`database`, `host`, `password`, `user`})
+     * @returns `Connection`
+     * This function create a connection with Database set
+     */
+    connectionDB({ database, host, password, user }) {
+        const connection = (0, mysql2_1.createConnection)({ "database": database, "host": host, "password": password, user: user });
+        connection.connect((err) => {
+            if (err)
+                throw new Error(err.message);
+            return;
         });
+        return connection;
     }
+    /**
+     *
+     * @param urls [ { "`url`": "route name", "`data`": {"`message`": "return data"} } ] | ["`route1`","`rout2`",...]
+     * If you define as `Object Array`, then, you must to define url and data(return data). Otherwise, you must to define as `String Array`
+     * and the return will be default(a message, to show that the riute is set).
+     */
     get(urls) {
         if (!(0, transformers_1.checkObjects)(urls, "string") && !(0, transformers_1.checkObjects)(urls, "object")) {
-            throw new Error("Error => O tipo da condicao, nao coencide");
+            throw new errors_1.InvalidTypes({ "message": "OS TIPOS DE DADOS INSERIDOS NA CONDIÇÃO NÃO COENCIDEM", "action": "INSIRA VALORES VÁLIDOS" });
         }
         if ((0, transformers_1.checkObjects)(urls, "string")) {
             urls.map((url) => {
@@ -71,7 +69,6 @@ class Server {
                 const param = (0, transformers_1.transformURL)({ "url": url });
                 this.server.on("request", (req, res) => {
                     if (req.url === `/${param}` && req.method === "GET") {
-                        console.log(`Boolean: ${!!data} | data: ${data}`);
                         if (!!data) {
                             return res.end(JSON.stringify(data));
                         }
@@ -81,16 +78,14 @@ class Server {
             });
         }
     }
-    connectionDB({ database, host, password, user }) {
-        const connection = (0, mysql2_1.createConnection)({ "database": database, "host": host, "password": password, user: user });
-        connection.connect((err) => {
-            if (err)
-                throw new Error(err.message);
-            return;
-        });
-        return connection;
-    }
+    /**
+     *
+     * @param urls [ { "`url`": "route name", params({ obj_body, validate, insertOnTable }) { // code to manipulate the body request and others } } ]
+     * @param dbConfig ({ database,host,password,user }) params to create connection to Database
+     *
+     */
     post(urls, dbConfig) {
+        const self = this;
         switch (!!dbConfig) {
             case true:
                 const connect = this.connectionDB(dbConfig);
@@ -106,17 +101,22 @@ class Server {
                             req.on("end", () => {
                                 const body = Buffer.concat(datas).toString();
                                 const parsedBody = node_querystring_1.default.parse(body);
-                                params({ "obj_body": parsedBody, "validate": (0, transformers_1.validateField)(parsedBody), insertInTbl(tbl_name, fieldTable, valuesField) {
+                                params({ "obj_body": parsedBody, "validate": (0, transformers_1.validateField)(parsedBody), insertOnTable(tbl_name, fieldTable, valuesField) {
                                         if ((fieldTable.length !== valuesField.length) || fieldTable.length === 0 || valuesField.length === 0) {
-                                            throw new Error("O número de campos que serão inseridos, não pode ser diferente do número de valores que serão inseridos!");
+                                            throw new errors_1.ErrorLength({ "message": self.msgErrorLength["message"], "action": self.msgErrorLength["action"] });
                                         }
                                         if (!tbl_name) {
-                                            throw new Error("O nome da tabela nao pode estar vazia!");
+                                            throw new Error("CAMPOS COMO [tbl_name, fieldTable, valuesField] ");
                                         }
                                         const [field, values] = [fieldTable.toString(), (0, transformers_1.setArray)(valuesField).toString()];
-                                        connect.execute(`INSERT INTO ${tbl_name}(${field}) VALUES (${values})`, valuesField, (err) => (err ? console.log("Erro ao inserir os dados! " + err) : console.log("Valores inseridos com sucesso!")));
+                                        connect.execute(`INSERT INTO ${tbl_name}(${field}) VALUES (${values})`, valuesField, (err) => {
+                                            if (err) {
+                                                throw new Error(`ERRO AO INSERIR REGISTO: ${err.stack}`);
+                                            }
+                                            self.log("REGISTO INSERIDO COM SUCESSO");
+                                            return res.end(JSON.stringify({ "message": "sucess", 'status': 200 }));
+                                        });
                                     } });
-                                return res.end(JSON.stringify({ "message": "sucess", 'status': 200 }));
                             });
                         }
                     });
@@ -135,10 +135,10 @@ class Server {
                             req.on("end", () => {
                                 const body = Buffer.concat(datas).toString();
                                 const parsedBody = node_querystring_1.default.parse(body);
-                                params({ "obj_body": parsedBody, "validate": (0, transformers_1.validateField)(parsedBody), insertInTbl(tbl_name, fieldTable, valuesField) {
-                                        throw new Error("Não pode usar a função [insertInTbl], sem definir as configurações para conexão com o banco de dados!");
+                                params({ "obj_body": parsedBody, "validate": (0, transformers_1.validateField)(parsedBody), insertOnTable(tbl_name, fieldTable, valuesField) {
+                                        throw new errors_1.DatabaseError({ "message": self.msgDBError["message"], "action": self.msgDBError["action"] });
                                     } });
-                                return res.end(JSON.stringify({ "message": "sucess", 'status': 200 }));
+                                return res.end();
                             });
                         }
                     });
@@ -148,6 +148,12 @@ class Server {
                 break;
         }
     }
+    /**
+     *
+     * @param urls [ { "`url`": "route name", params({ obj_body, validate, changeOn, transformKeys, transformValues }) { // code to manipulate the body request and others } } ]
+     * @param dbConfig ({ database,host,password,user }) params to create connection to Database
+     *
+     */
     put(urls, dbConfig) {
         const self = this;
         switch (!!dbConfig) {
@@ -168,17 +174,17 @@ class Server {
                                 changeOnTable({ "obj_body": parsedBody, "validate": (0, transformers_1.validateField)(parsedBody),
                                     changeOn({ tbl_name, columns, values, columnID, id }) {
                                         if ((columns.length !== values.length) || columns.length == 0 || values.length === 0) {
-                                            throw new Error("O número de campos que serão inseridos, não pode ser diferente do número de valores que serão inseridos!");
+                                            throw new errors_1.ErrorLength({ "message": self.msgErrorLength["message"], "action": self.msgErrorLength["action"] });
                                         }
                                         if (!tbl_name || !columnID || !id) {
-                                            throw new Error("Campos como ['Nome da tabela','coluna de id', 'id'] nao podem estar vazias!");
+                                            throw new Error("CAMPOS COMO ['Nome da tabela','coluna de id', 'id'] NÃO PODEM ESTAR VAZIOS");
                                         }
                                         columns.map((column, index) => {
                                             connect.execute(`UPDATE ${tbl_name} SET ${column} = ? WHERE ${columnID} = ? LIMIT 1`, [values[index], id], (err) => {
                                                 if (err)
-                                                    throw new Error(`Erro ao atualizar o registro! ${err.stack}`);
-                                                self.log("Registro atualizado com sucesso!");
-                                                return;
+                                                    throw new Error(`[ERRO AO ATUALIZAR REGISTO]: ${err.stack}`);
+                                                self.log("REGISTO ATUALIZADO COM SUCESSO");
+                                                return res.end(JSON.stringify({ "message": "sucess", 'status': 200 }));
                                             });
                                         });
                                     },
@@ -191,7 +197,6 @@ class Server {
                                         return values;
                                     },
                                 });
-                                return res.end(JSON.stringify({ "message": "sucess", 'status': 200 }));
                             });
                         }
                     });
@@ -212,15 +217,15 @@ class Server {
                                 const parsedBody = node_querystring_1.default.parse(body);
                                 changeOnTable({ "obj_body": parsedBody, "validate": (0, transformers_1.validateField)(parsedBody),
                                     changeOn({ tbl_name, columns, values, columnID, id }) {
-                                        throw new Error("Não pode usar a função [insertInTbl], sem definir as configurações para conexão com o banco de dados!");
+                                        throw new errors_1.DatabaseError({ "message": self.msgDBError["message"], "action": self.msgDBError["action"] });
                                     },
                                     transformKeys(body) {
-                                        throw new Error("Não pode usar a função [insertInTbl], sem definir as configurações para conexão com o banco de dados!");
+                                        throw new errors_1.DatabaseError({ "message": self.msgDBError["message"], "action": self.msgDBError["action"] });
                                     },
                                     transformValues(body) {
-                                        throw new Error("Não pode usar a função [insertInTbl], sem definir as configurações para conexão com o banco de dados!");
+                                        throw new errors_1.DatabaseError({ "message": self.msgDBError["message"], "action": self.msgDBError["action"] });
                                     } });
-                                return res.end(JSON.stringify({ "message": "sucess", 'status': 200 }));
+                                return res.end();
                             });
                         }
                     });
@@ -230,6 +235,12 @@ class Server {
                 break;
         }
     }
+    /**
+     *
+     * @param urls [ { "`url`": "route name", params({ obj_body:object, deleteOn({"tbl_name": "table name", "columnID": "id column", "id": 2}): void }) { // code to manipulate the body request and others } } ]
+     * @param dbConfig ({ database,host,password,user }) params to create connection to Database
+     *
+     */
     delete(urls, dbConfig) {
         const self = this;
         switch (!!dbConfig) {
@@ -245,29 +256,51 @@ class Server {
                             deleteOnTable({
                                 "obj_body": (0, transformers_1.transformLastParam)(params.query),
                                 deleteOn({ tbl_name, columnID, id }) {
+                                    if (!tbl_name || !columnID || !id) {
+                                        throw new Error("CAMPOS COMO [tbl_name, columnId, id] NÃO PODEM ESTAR VAZIOS!");
+                                    }
                                     const { del } = Object((0, transformers_1.transformLastParam)(params.query));
                                     connect.execute(`DELETE FROM ${tbl_name} WHERE ${columnID} = ?`, [id || del], (err) => {
                                         if (err)
-                                            throw new Error(`Erro ao deletar registro! ${err}`);
-                                        self.log(`Registro deletado com sucesso!`);
-                                        return;
+                                            throw new Error(`ERRO AO DELETAR REGISTO!! ${err}`);
+                                        self.log(`REGISTO DELETADO COM SUCESSO!`);
+                                        return res.end(JSON.stringify({ "message": "REGISTO DELETADO COM SUCESSO" }));
                                     });
                                 }
                             });
-                            return res.end(JSON.stringify({ "msg": "Registo deletado" }));
                         }
                     });
                 });
                 break;
             case false:
+                urls.map((urlParam) => {
+                    const { url, deleteOnTable } = urlParam;
+                    const param = (0, transformers_1.transformURL)({ "url": url });
+                    this.server.on("request", (req, res) => {
+                        const params = node_url_1.default.parse(req.url);
+                        const baseParams = (0, transformers_1.transformURL)({ "url": params.pathname });
+                        if (`/${baseParams}` === `/${param}` && req.method === "DELETE") {
+                            deleteOnTable({
+                                "obj_body": (0, transformers_1.transformLastParam)(params.query),
+                                deleteOn({ tbl_name, columnID, id }) {
+                                    throw new errors_1.DatabaseError({ "message": self.msgDBError["message"], "action": self.msgDBError["action"] });
+                                }
+                            });
+                            return res.end();
+                        }
+                    });
+                });
                 break;
             default:
                 break;
         }
     }
-    listen(PORT) {
+    /**
+     * @param port (port: number) set the PORT to server listen
+     */
+    listen(port) {
         this.server
-            .listen(this.PORT || PORT, "localhost", () => this.log(`Server is running! At http://localhost:${this.PORT || PORT}`));
+            .listen(port, "localhost", () => this.log(`SERVIDOR ESTÁ RODANDO NA PORTA: http://localhost:${port}`));
     }
 }
 exports.default = new Server();

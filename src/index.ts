@@ -1,15 +1,15 @@
-const passwordDB = "#3dvan1a^2+/-D";
-
 import server from "./main.server";
 
 server.listen(4002);
 
 const configDB = {
-    "database": "flowQLDB", 
-    "host": "localhost",
-    "user": "root",
-    "password": passwordDB
-}
+    "database": "crie um banco de dados(flowQL)", 
+    "host": "adicione o seu host(padrão, localhost)",
+    "user": "tipo de usuário(padrão, root)",
+    "password": "informe a sua password"
+};
+
+// O banco de dados, dev conter uma tabela, tbl_user, com os campos, (id, username, email);
 
 server.delete(
     [
@@ -23,31 +23,6 @@ server.delete(
     ],
     configDB
 );
-
-// server.put([
-//     {
-//         "url": "home",
-//         changeOnTable({ obj_body, validate, changeOn, transformKeys, transformValues }) {
-//             const keys = transformKeys(obj_body);
-//             const valuesBody = transformValues(obj_body);
-//             changeOn({"tbl_name": "tbl_user", "columns": keys, "values": valuesBody, "columnID": "id", "id": 2});
-//         }
-//     }
-// ], {"database": "flowQLDB", "host": "localhost", "password": "#3dvan1a^2+/-D", "user": "root"});
-
-// server.delete([
-//     {
-//         'url': 'home/product', 
-//         deleteOnTable({ obj_body, deleteOn }) {
-//             console.log(obj_body);
-//             deleteOn({"tbl_name": "tbl_user", "columnID": "id", "id": 2});
-//         }
-//     }
-// ], {"database": "flowQLDB", "host": "localhost", "password": "#3dvan1a^2+/-D", "user": "root"});
-
-
-
-// -----------------------------------
 
 server.get(["////home/product", "product"]);
 

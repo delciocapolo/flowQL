@@ -10,7 +10,7 @@ Estes comandos são fornecidos através de uma **Classe Server** com as respecti
 <br>
 ## Verbos http e seus métodos na classe 
 ### GET <br> 
-> Utilizado para obtenção de dados da API. <br>
+> É utilizado para solicitar dados de um servidor. Ou seja, É comumente usado para recuperar informações de um recurso (como uma página web, imagem, arquivo ou dados em um banco de dados).<br>
 
 Este método apresenta duas formas de implementação: <br> 
 1. ```javascript
@@ -48,7 +48,7 @@ Este método apresenta duas formas de implementação: <br>
     Passando como valor um **Array de objectos**, a chave "**url**", é responsável por receber uma string que será a rota. A chave "**data**" receberá um objecto, em que nele o desenvolvedor poderá definir qual será a resposta do servidor, para a rota acessada.
 
 ### POST <br> 
-> Utilizado para obtenção de dados da API. <br>
+> É utilizado para enviar dados ao servidor para serem processados. É comumente usado em formulários web e para enviar dados para criar ou atualizar recursos no servidor.<br>
 
 Há duas formas de implementação, com este método. Sendo eles, ***freeHands*** e ***closeHands***. Sendo que **freeHands** representa o método *post* sem uma conexão com banco de dados, já o **closeHands** é o caso contrário. Ou seja, é o método *post* com uma conexão com o banco de dados, nele sendo possível inserir dados no banco dados, utilizando um método nativo da função.
 1. freeHands: 
@@ -123,7 +123,7 @@ Há duas formas de implementação, com este método. Sendo eles, ***freeHands**
     > Apenas suporta o SGBD, MySQL.
 
 ### PUT <br> 
-> Utilizado para obtenção de dados da API. <br>
+> É utilizado para atualizar um recurso existente no servidor. Ele envia dados para substituir completamente o recurso na URL especificada.<br>
 
 Há duas formas de implementar o método put,sendo elas ,também, ***freeHands*** e ***closeHands***.
 1. freeHands:
@@ -207,7 +207,7 @@ Há duas formas de implementar o método put,sendo elas ,também, ***freeHands**
 
 ### DELETE <br>
 
-> Utilizado para obtenção de dados da API. <br>
+> É utilizado para remover um recurso específico no servidor. Ele faz uma solicitação para excluir o recurso identificado pela URL.<br>
 
 Tal como os outros métodos(POST e PUT), o delete também possui duas implementações(freeHands e closeHands).
 

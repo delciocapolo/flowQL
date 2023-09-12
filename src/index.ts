@@ -2,6 +2,7 @@ import server from "./main.server";
 
 server.listen(4002);
 
+// Variavel de configuracao do banco de dados
 const configDB = {
     "database": "crie um banco de dados(flowQL)", 
     "host": "adicione o seu host(padrão, localhost)",
@@ -11,19 +12,7 @@ const configDB = {
 
 // O banco de dados, dev conter uma tabela, tbl_user, com os campos, (id, username, email);
 
-server.delete(
-    [
-        {
-            "url": "/user",
-            deleteOnTable({ obj_body, deleteOn }) {
-                const { del } = Object(obj_body);
-                deleteOn({"tbl_name": "tbl_user", "columnID": "id", "id": del});
-            },
-        }
-    ],
-    configDB
-);
-
+// Metodo (get), corresponde ao verbo http GET
 server.get(["////home/product", "product"]);
 
 server.get(['home/user/discover','/product/category/desk']);
@@ -39,6 +28,7 @@ server.get([
     }
 ]);
 
+// Metodo (post), corresponde ao verbo http POST
 server.post(
     [
         {
@@ -54,6 +44,7 @@ server.post(
     configDB
 );
 
+// Metodo (put), corresponde ao verbo http PUT
 server.put(
     [
         {
@@ -71,6 +62,20 @@ server.put(
                         "id": 1
                     });
                 }
+            },
+        }
+    ],
+    configDB
+);
+
+// Metodo (delete), corresponde ao verbo http DELETE
+server.delete(
+    [
+        {
+            "url": "/user",
+            deleteOnTable({ obj_body, deleteOn }) {
+                const { del } = Object(obj_body);
+                deleteOn({"tbl_name": "tbl_user", "columnID": "id", "id": del});
             },
         }
     ],
